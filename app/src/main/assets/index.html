@@ -1,0 +1,786 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>FDM Saint-Cyr Volley</title>
+<meta name="theme-color" content="#1E2B7A">
+<meta name="robots" content="noindex,nofollow">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="FDM Volley">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<script src="vendor/jspdf.umd.min.js" defer></script>
+<script src="vendor/pdf.min.js" defer></script>
+<script src="vendor/tess/tesseract.min.js" defer></script>
+<style>
+@font-face{font-family:"Barlow";font-weight:400;font-display:swap;src:url(fonts/barlow-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"Barlow";font-weight:500;font-display:swap;src:url(fonts/barlow-latin-500-normal.woff2) format("woff2")}
+@font-face{font-family:"Barlow";font-weight:600;font-display:swap;src:url(fonts/barlow-latin-600-normal.woff2) format("woff2")}
+@font-face{font-family:"Barlow";font-weight:700;font-display:swap;src:url(fonts/barlow-latin-700-normal.woff2) format("woff2")}
+@font-face{font-family:"Barlow Condensed";font-weight:600;font-display:swap;src:url(fonts/barlow-condensed-latin-600-normal.woff2) format("woff2")}
+@font-face{font-family:"Barlow Condensed";font-weight:700;font-display:swap;src:url(fonts/barlow-condensed-latin-700-normal.woff2) format("woff2")}
+html{color-scheme:light}
+body{margin:0;-webkit-text-size-adjust:100%;padding-top:env(safe-area-inset-top,0px)}
+img{max-width:100%}
+[hidden]{display:none!important}
+:root{
+  --bg:#EEF1F8; --surface:#FFFFFF; --surface2:#F6F8FC; --ink:#131936; --muted:#5A6284; --line:#D6DCEB;
+  --primary:#1E2B7A; --on-primary:#FFFFFF; --accent:#D62839; --accent-soft:#FBE3E6; --prim-soft:#E3E7F8;
+  --ok:#17835A; --ok-soft:#DDF3EA; --warn:#A8660F; --warn-soft:#FCEFD9;
+  --disp:"Barlow Condensed","Arial Narrow",Arial,sans-serif; --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --r:12px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  color-scheme:dark; --bg:#0D1122; --surface:#161C34; --surface2:#1C2340; --ink:#E9ECF8; --muted:#9CA4C4; --line:#2B3357;
+  --primary:#8FA0FF; --on-primary:#0D1122; --accent:#FF6272; --accent-soft:#3A1A24; --prim-soft:#232B55;
+  --ok:#4FD39B; --ok-soft:#133329; --warn:#F2B35A; --warn-soft:#3A2A12;}}
+:root[data-theme="dark"]{
+  color-scheme:dark; --bg:#0D1122; --surface:#161C34; --surface2:#1C2340; --ink:#E9ECF8; --muted:#9CA4C4; --line:#2B3357;
+  --primary:#8FA0FF; --on-primary:#0D1122; --accent:#FF6272; --accent-soft:#3A1A24; --prim-soft:#232B55;
+  --ok:#4FD39B; --ok-soft:#133329; --warn:#F2B35A; --warn-soft:#3A2A12;}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.4;padding-inline:0;padding-bottom:84px}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);padding:12px 16px 10px;border-bottom:1px solid var(--line)}
+.top-in{max-width:760px;margin:0 auto;display:flex;align-items:center;gap:12px}
+.top img{width:40px;height:40px;border-radius:50%;background:#fff;flex:none}
+.brand{flex:1;min-width:0}
+.brand b{display:block;font-family:var(--disp);font-size:21px;letter-spacing:.02em;line-height:1.05;text-transform:uppercase}
+.brand span{font-size:12.5px;color:var(--muted)}
+.seg{display:inline-flex;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px;gap:2px}
+.seg button{border:0;background:none;padding:6px 12px;border-radius:999px;font-weight:600;font-size:13.5px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--primary);color:var(--on-primary)}
+main{max-width:760px;margin:0 auto;padding:14px 16px 20px;display:grid;gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:grid;gap:12px}
+.card h2{margin:0;display:flex;align-items:center;gap:10px;font-family:var(--disp);font-size:20px;letter-spacing:.03em;text-transform:uppercase}
+.step{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:7px;background:var(--prim-soft);color:var(--primary);font-size:15px;flex:none}
+.hint{font-size:13px;color:var(--muted);margin:0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+label.f{display:grid;gap:4px;font-size:12.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;min-width:0}
+input[type=text],input[type=date],input[type=number],input:not([type]),select,textarea{width:100%;min-width:0;background:var(--surface2);border:1px solid var(--line);border-radius:9px;padding:10px 11px;font-size:16px;text-transform:none;letter-spacing:0;font-weight:500}
+textarea{min-height:92px;resize:vertical}
+.code{font-family:var(--disp);font-size:22px;letter-spacing:.04em;background:var(--prim-soft);color:var(--primary);border-radius:9px;padding:6px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.code small{font-family:var(--body);font-size:12px;color:var(--muted);letter-spacing:0}
+.toggle{display:flex;gap:8px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--surface2);border-radius:999px;padding:7px 13px;font-weight:600;font-size:14px}
+.chip[aria-pressed="true"]{background:var(--primary);border-color:var(--primary);color:var(--on-primary)}
+.plist{display:grid;gap:6px}
+.prow{display:grid;grid-template-columns:1fr auto auto auto;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface2)}
+.prow.off{opacity:.5}
+.prow .nm{font-weight:600;min-width:0;overflow-wrap:anywhere}
+.prow .lc{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.ck{width:22px;height:22px;accent-color:var(--primary)}
+.vu{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:5px 9px;font-weight:700;font-size:12.5px;color:var(--muted)}
+.vu[aria-pressed="true"]{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
+.eye{border:0;background:none;padding:4px;color:var(--primary);display:grid;place-items:center}
+.eye svg{width:22px;height:22px}
+.advrow{display:grid;grid-template-columns:22px 1fr 110px auto auto;gap:8px;align-items:center}
+.advrow .eye{visibility:hidden}.advrow .eye.on{visibility:visible}
+.advnote{grid-column:2/-1;font-size:12.5px;color:var(--warn);margin-top:-4px}
+.absent{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:5px 9px;font-weight:700;font-size:12.5px;color:var(--accent)}
+.back{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:5px 9px;font-weight:700;font-size:12.5px;color:var(--primary)}
+.abs-h{font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-top:4px}
+.count{font-family:var(--disp);font-size:17px;color:var(--muted);margin-left:auto}
+.scan{display:grid;gap:10px;padding:12px;border-radius:10px;background:var(--prim-soft)}
+.scan .row .btn{flex:1 1 150px}
+.scanst{font-size:14px;font-weight:600;color:var(--primary)}
+.scanst.err{color:var(--accent)}
+input.file{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.advrow .n{font-size:12px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+.advrow input{padding:8px 8px}
+.advrow input[data-al]{font-variant-numeric:tabular-nums;padding-inline:6px;text-align:center}
+.sets{display:grid;gap:6px}
+.setrow{display:grid;grid-template-columns:64px 1fr 1fr;gap:8px;align-items:center}
+.setrow .lab{font-family:var(--disp);font-size:17px;color:var(--muted)}
+.setrow input{text-align:center;font-family:var(--disp);font-size:22px;padding:6px;font-variant-numeric:tabular-nums}
+.setrow input.win{border-color:var(--ok);background:var(--ok-soft);color:var(--ok)}
+.sethead{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.result{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:10px;background:var(--surface2);border:1px dashed var(--line);font-weight:600}
+.result b{font-family:var(--disp);font-size:20px;letter-spacing:.03em}
+.sigs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.sig{border:1.5px dashed var(--line);border-radius:10px;background:#fff;min-height:96px;display:grid;grid-template-rows:auto 1fr;padding:6px;text-align:left;color:#131936}
+.sig span{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#5A6284}
+.sig img{max-width:100%;max-height:64px;margin:auto;display:block}
+.sig em{margin:auto;font-style:normal;font-size:13px;color:#8a90aa}
+.sig.done{border-style:solid;border-color:var(--ok)}
+.btn{border:0;border-radius:10px;padding:12px 16px;font-weight:700;font-size:15.5px;background:var(--primary);color:var(--on-primary);display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn.sec{background:var(--surface2);color:var(--ink);border:1px solid var(--line)}
+.btn.red{background:var(--accent);color:#fff}
+.btn:disabled{opacity:.5;cursor:default}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row .btn{flex:1 1 140px}
+.warns{margin:0;padding:10px 12px 10px 30px;background:var(--warn-soft);color:var(--warn);border-radius:10px;font-size:14px;display:grid;gap:3px}
+.okbox{padding:10px 12px;background:var(--ok-soft);color:var(--ok);border-radius:10px;font-size:14px;font-weight:600}
+.errbox{padding:10px 12px;background:var(--accent-soft);color:var(--accent);border-radius:10px;font-size:14px}
+.preview{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff}
+.preview img{display:block;width:100%}
+.mailbox{display:grid;gap:6px;font-size:14px}
+.mailline{display:flex;gap:8px;align-items:center;background:var(--surface2);border:1px solid var(--line);border-radius:9px;padding:8px 10px}
+.mailline span{flex:1;min-width:0;overflow-wrap:anywhere;user-select:all}
+.mailline small{color:var(--muted);font-weight:700;font-size:11px;text-transform:uppercase;width:44px;flex:none}
+.mini{border:1px solid var(--line);background:var(--surface);border-radius:7px;padding:4px 8px;font-size:12.5px;font-weight:600;flex:none}
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--surface);border-top:1px solid var(--line);padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));display:flex;justify-content:center}
+.tabs-in{display:flex;max-width:520px;width:100%}
+.tabs button{flex:1;border:0;background:none;display:grid;justify-items:center;gap:2px;padding:6px 4px;font-size:12px;font-weight:600;color:var(--muted);border-radius:10px}
+.tabs button svg{width:24px;height:24px}
+.tabs button[aria-current="page"]{color:var(--primary);background:var(--prim-soft)}
+.lgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.lcard{border:0;padding:0;background:none;text-align:left;display:grid;gap:6px}
+.lcard img{width:100%;border-radius:10px;box-shadow:0 1px 0 var(--line),0 4px 14px rgba(20,26,54,.12);aspect-ratio:241/156;object-fit:cover;background:#dfe7f5}
+.lcard .ph{aspect-ratio:241/156;border-radius:10px;border:1.5px dashed var(--line);display:grid;place-items:center;color:var(--muted);font-size:13px;padding:10px;text-align:center}
+.lcard b{font-size:14.5px}
+.lcard span{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.modal{position:fixed;inset:0;z-index:50;background:rgba(8,11,26,.78);display:grid;place-items:center;padding:16px}
+.modal-in{background:var(--surface);border-radius:14px;padding:14px;width:100%;max-width:620px;display:grid;gap:12px;max-height:100%;overflow:auto}
+.modal-in h3{margin:0;font-family:var(--disp);font-size:21px;text-transform:uppercase;letter-spacing:.03em}
+.modal-in img.big{width:100%;border-radius:10px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:14px}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0;font-weight:600;font-variant-numeric:tabular-nums}
+#pad{width:100%;height:240px;background:#fff;border-radius:10px;border:1px solid var(--line);touch-action:none;display:block}
+.edrow{display:grid;grid-template-columns:1fr 110px auto;gap:8px;align-items:center}
+.del{border:1px solid var(--line);background:var(--surface2);border-radius:8px;width:38px;height:38px;color:var(--accent);font-size:20px;line-height:1}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:60;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-weight:600;font-size:14px;max-width:calc(100% - 32px)}
+.sw{display:flex;align-items:center;gap:10px;font-size:14px}
+@media (max-width:460px){
+  .grid3{grid-template-columns:1fr 1fr}
+  .grid3 > :first-child{grid-column:1/-1}
+  .sigs{grid-template-columns:1fr 1fr}
+  .sigs > :first-child{grid-column:1/-1}
+  .brand span{display:none}
+  .advrow{grid-template-columns:16px 1fr 88px auto auto;gap:5px}
+  .advrow input{font-size:15px}
+  .advrow .vu{padding:5px 6px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<header class="top"><div class="top-in">
+  <img id="logo" alt="FSGT Volley 78">
+  <div class="brand"><b id="hdTitle">Feuille de match</b><span id="hdSub">Saint-Cyr Volley Ball · saison 2026-2027</span></div>
+  <div class="seg" role="group" aria-label="Équipe">
+    <button id="tF" aria-pressed="true">Filles</button><button id="tM" aria-pressed="false">Gars</button>
+  </div>
+</div></header>
+
+<main id="vMatch">
+  <section class="card">
+    <h2><span class="step">1</span>Rencontre</h2>
+    <div class="grid2">
+      <label class="f">Date<input type="date" id="mDate"></label>
+      <label class="f">Lieu
+        <select id="mDom"><option value="1">Domicile</option><option value="0">Extérieur</option></select>
+      </label>
+    </div>
+    <div class="grid3">
+      <label class="f">Compétition
+        <select id="mComp">
+          <option value="M">M · Championnat masculin</option>
+          <option value="F">F · Championnat féminin</option>
+          <option value="L">L · Challenge loisir</option>
+          <option value="CM">CM · Coupe masculins</option>
+          <option value="CF">CF · Coupe féminines</option>
+        </select>
+      </label>
+      <label class="f">Poule / match<input id="mPoule" inputmode="numeric" placeholder="ex. 2"></label>
+      <label class="f">Journée<input id="mJour" inputmode="numeric" placeholder="ex. 3"></label>
+    </div>
+    <div class="code"><span id="codeOut">F-Poule?-J?</span><small>code match</small></div>
+    <p class="hint">Le code match figure sur le site de la Commission et sur les calendriers.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="step">2</span>Équipe A · <span id="nomA">SAINT-CYR 1</span><span class="count" id="ourCount"></span></h2>
+    <p class="hint">Touche « Absent » pour retirer quelqu'un de la feuille (10 max). « Vu » est coché par le capitaine adverse après contrôle des photos, l'œil ouvre la licence.</p>
+    <div class="plist" id="ourList"></div>
+  </section>
+
+  <section class="card">
+    <h2><span class="step">3</span>Équipe B · adversaire</h2>
+    <label class="f">Nom de l'équipe (club + numéro)<input id="advNom" placeholder="ex. VERSAILLES 2"></label>
+    <div class="scan" id="scanBox">
+      <div class="row">
+        <button class="btn" id="bScanCam">Scanner une licence</button>
+        <button class="btn sec" id="bScanFile">Photo ou PDF</button>
+      </div>
+      <input type="file" class="file" id="fCam" accept="image/*" capture="environment" tabindex="-1" aria-hidden="true">
+      <input type="file" class="file" id="fFile" accept="image/*,application/pdf,.pdf" multiple tabindex="-1" aria-hidden="true">
+      <div class="scanst" id="scanSt">Prends la licence en photo, bien à plat et cadrée serrée (carte ou écran) : le nom et le numéro s'ajoutent à la liste.</div>
+    </div>
+    <div id="advList" class="plist"></div>
+    <p class="hint">L'initiale du prénom suffit. Sans licence, note la pièce d'identité présentée dans les observations.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="step">4</span>Scores</h2>
+    <div class="sets" id="sets"></div>
+    <div class="result"><span>Vainqueur</span><b id="winOut">—</b></div>
+  </section>
+
+  <section class="card">
+    <h2><span class="step">5</span>Observations · réclamations</h2>
+    <textarea id="mObs" placeholder="Avant le match : licences (absence, pièce d'identité…). Après : blessure, incidents de jeu, comportements…"></textarea>
+    <label class="sw"><input type="checkbox" class="ck" id="mRayer"> Rayer les cases vides sur la feuille (demandé par le règlement)</label>
+  </section>
+
+  <section class="card">
+    <h2><span class="step">6</span>Signatures</h2>
+    <label class="f">Nom de l'arbitre<input id="mArb" placeholder="ex. DUPONT J."></label>
+    <div class="sigs">
+      <button class="sig" data-sig="sigArb"><span>Arbitre</span><em>Toucher pour signer</em></button>
+      <button class="sig" data-sig="sigA"><span>Capitaine A</span><em>Toucher pour signer</em></button>
+      <button class="sig" data-sig="sigB"><span>Capitaine B</span><em>Toucher pour signer</em></button>
+    </div>
+    <p class="hint">La feuille se signe après la rencontre par les deux capitaines et l'arbitre.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="step">7</span>Générer et envoyer</h2>
+    <ul class="warns" id="warns" hidden></ul>
+    <div class="row">
+      <button class="btn" id="bGen">Générer la feuille</button>
+    </div>
+    <div id="outZone" hidden style="display:grid;gap:12px">
+      <div class="preview"><img id="prevImg" alt="Aperçu de la feuille de match"></div>
+            <div class="row">
+        <button class="btn sec" id="bPdf">Enregistrer en PDF</button>
+        <button class="btn sec" id="bJpg">Enregistrer en JPEG</button>
+      </div>
+      <div class="mailbox">
+        <div class="mailline"><small>À</small><span id="mailTo">fsgt78.volley@gmail.com</span><button class="mini" data-copy="mailTo">Copier</button></div>
+        <div class="mailline"><small>Objet</small><span id="mailSub"></span><button class="mini" data-copy="mailSub">Copier</button></div>
+      </div>
+      <div class="row">
+        <label class="f" style="flex:1 1 140px">Pièce jointe
+          <select id="attFmt"><option value="pdf">PDF</option><option value="jpg">JPEG</option></select>
+        </label>
+        <button class="btn red" id="bMail" style="align-self:end">Envoyer par mail</button>
+      </div>
+      <p class="hint">Choisis Gmail ou Mail dans le menu de partage : la feuille est jointe. Vérifie le destinataire et l'objet (boutons Copier au-dessus).</p>
+      <div id="mailMsg"></div>
+      <a id="mailtoLink" class="hint" href="#">Pas de menu de partage ? Ouvrir mon appli mail (joindre le fichier enregistré)</a>
+      <p class="hint">À envoyer dans les 72 heures. Un seul match par mail, avec le code match et les noms des équipes en objet.</p>
+    </div>
+    <button class="btn sec" id="bReset">Nouvelle feuille pour cette équipe</button>
+    <div id="resetConfirm" hidden class="row">
+      <span class="hint" style="flex:1 1 100%">Effacer les scores, l'adversaire, les observations et les signatures ?</span>
+      <button class="btn red" id="bResetYes">Oui, effacer</button><button class="btn sec" id="bResetNo">Annuler</button>
+    </div>
+  </section>
+</main>
+
+<main id="vLic" hidden>
+  <section class="card">
+    <h2 id="licTitle">Licences</h2>
+    <p class="hint">Rectos des licences FSGT 2026-2027, valables jusqu'au 31/08/2027. Touche une licence pour l'agrandir.</p>
+    <div class="lgrid" id="licGrid"></div>
+  </section>
+</main>
+
+<main id="vTeam" hidden>
+  <section class="card">
+    <h2 id="teamTitle">Profil d'équipe</h2>
+    <p class="hint">Ce profil pré-remplit la feuille. Les modifications restent enregistrées sur cet appareil.</p>
+    <div class="grid2">
+      <label class="f">Nom sur la feuille<input id="tNom"></label>
+      <label class="f">Compétition par défaut
+        <select id="tComp"><option value="M">M</option><option value="F">F</option><option value="L">L</option><option value="CM">CM</option><option value="CF">CF</option></select>
+      </label>
+    </div>
+    <div class="plist" id="edList"></div>
+    <div class="row">
+      <button class="btn sec" id="bAddP">Ajouter un joueur</button>
+      <button class="btn sec" id="bRestore">Revenir à la liste d'origine</button>
+    </div>
+  </section>
+</main>
+
+<nav class="tabs"><div class="tabs-in">
+  <button data-tab="vMatch" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Feuille</button>
+  <button data-tab="vLic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2.5" y="5" width="19" height="14" rx="2"/><circle cx="8" cy="11" r="2.2"/><path d="M4.8 16.2c.7-1.6 1.9-2.4 3.2-2.4s2.5.8 3.2 2.4M14 10h5M14 13.5h4"/></svg>Licences</button>
+  <button data-tab="vTeam"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3"/><path d="M3.5 19c.8-3 3-4.5 5.5-4.5s4.7 1.5 5.5 4.5"/><circle cx="17" cy="9" r="2.3"/><path d="M16 14.6c2.2 0 3.8 1.3 4.5 3.9"/></svg>Équipes</button>
+</div></nav>
+
+<div class="modal" id="mdLic" hidden><div class="modal-in">
+  <h3 id="mlName"></h3><img class="big" id="mlImg" alt=""><dl class="kv" id="mlKv"></dl>
+  <button class="btn sec" data-close="mdLic">Fermer</button>
+</div></div>
+
+<div class="modal" id="mdSig" hidden><div class="modal-in">
+  <h3 id="msTitle">Signature</h3>
+  <canvas id="pad"></canvas>
+  <div class="row"><button class="btn sec" id="padClear">Effacer</button><button class="btn" id="padOk">Valider</button></div>
+  <button class="btn sec" data-close="mdSig">Annuler</button>
+</div></div>
+
+<div class="toast" id="toast" hidden></div>
+<canvas id="sheet" hidden></canvas>
+
+<script>
+const LOGO="icons/fsgt78.png";
+const IMGS={"marine": "licences/marine.jpg", "dimya": "licences/dimya.jpg", "maja": "licences/maja.jpg", "anna": "licences/anna.jpg", "laurine": "licences/laurine.jpg", "anne": "licences/anne.jpg", "nathalie": "licences/nathalie.jpg", "emy": "licences/emy.jpg", "winson": "licences/winson.jpg", "clement": "licences/clement.jpg", "florian": "licences/florian.jpg", "quentin": "licences/quentin.jpg", "maxime": "licences/maxime.jpg", "thomas": "licences/thomas.jpg", "jonathan": "licences/jonathan.jpg"};
+const BASE={"F": [{"id": "marine", "nom": "AUDENAERT Marine", "naiss": "04/10/1988", "lic": "0237273", "valid": "21/09/2026"}, {"id": "dimya", "nom": "BENACHOUR Dimya", "naiss": "18/01/2000", "lic": "0490945", "valid": "16/09/2026"}, {"id": "maja", "nom": "GODINOT Maja", "naiss": "20/03/1984", "lic": "0497872", "valid": "16/09/2026"}, {"id": "anna", "nom": "GUERTIN Anna", "naiss": "04/04/1990", "lic": "0490934", "valid": "16/09/2026"}, {"id": "laurine", "nom": "HOT Laurine", "naiss": "28/10/2003", "lic": "0074724", "valid": "16/09/2026"}, {"id": "anne", "nom": "LEROUX Anne", "naiss": "08/05/1995", "lic": "0490943", "valid": "16/09/2026"}, {"id": "nathalie", "nom": "MABILE-CARUSO Nathalie", "naiss": "10/12/1987", "lic": "0606382", "valid": "21/09/2026"}, {"id": "emy", "nom": "RIBAC Emy", "naiss": "19/08/2004", "lic": "0606363", "valid": "21/09/2026"}], "M": [{"id": "winson", "nom": "AU Winson", "naiss": "27/12/1999", "lic": "0555786", "valid": "16/09/2026"}, {"id": "clement", "nom": "CARROYER Clément", "naiss": "04/05/2001", "lic": "0555740", "valid": "16/09/2026"}, {"id": "florian", "nom": "DELEGLISE Florian", "naiss": "18/02/1995", "lic": "0555599", "valid": "16/09/2026"}, {"id": "quentin", "nom": "MALATESTE Quentin", "naiss": "06/04/2000", "lic": "0555738", "valid": "16/09/2026"}, {"id": "maxime", "nom": "MOURY Maxime", "naiss": "06/11/1995", "lic": "0555742", "valid": "16/09/2026"}, {"id": "thomas", "nom": "SCOUL Thomas", "naiss": "06/12/1991", "lic": "0344281", "valid": "16/09/2026"}, {"id": "jonathan", "nom": "SERRE Jonathan", "naiss": "14/07/1981", "lic": "0036925", "valid": "02/09/2026"}]};
+const MAIL_TO="fsgt78.volley@gmail.com";
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const EYE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+
+function defTeams(){return{
+  F:{nom:"SAINT-CYR 1",comp:"F",players:BASE.F.map(p=>({...p}))},
+  M:{nom:"SAINT-CYR 2",comp:"M",players:BASE.M.map(p=>({...p}))}};}
+function defMatch(t){return{date:new Date().toISOString().slice(0,10),dom:true,comp:t.comp,poule:"",jour:"",
+  present:Object.fromEntries(t.players.map(p=>[p.id,true])),vuA:{},
+  adv:{nom:"",players:Array.from({length:10},()=>({nom:"",lic:"",vu:false}))},
+  sets:Array.from({length:5},()=>["",""]),obs:"",rayer:true,arb:"",sigArb:null,sigA:null,sigB:null};}
+
+let S;
+try{S=JSON.parse(localStorage.getItem("fdm-stcyr-v1"))}catch(e){}
+if(!S||!S.teams){const t=defTeams();S={cur:"F",tab:"vMatch",teams:t,match:{F:defMatch(t.F),M:defMatch(t.M)}};}
+let saveT;
+function save(){clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem("fdm-stcyr-v1",JSON.stringify(S))}catch(e){}},250);}
+const T=()=>S.teams[S.cur], M=()=>S.match[S.cur];
+
+function toast(msg){const t=$("#toast");t.textContent=msg;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,2600);}
+
+/* ---------- derived ---------- */
+function code(){const m=M();return `${m.comp}-Poule${m.poule||"?"}-J${m.jour||"?"}`;}
+function presentPlayers(){const m=M();return T().players.filter(p=>m.present[p.id]).slice(0,10);}
+function score(){
+  const m=M();let a=0,b=0,pa=0,pb=0,played=[];
+  m.sets.forEach(([x,y],i)=>{const X=parseInt(x),Y=parseInt(y);
+    if(!isNaN(X))pa+=X; if(!isNaN(Y))pb+=Y;
+    if(!isNaN(X)&&!isNaN(Y)&&X!==Y){played[i]=X>Y?"A":"B";X>Y?a++:b++;}});
+  const w=a>b?"A":b>a?"B":null;
+  return{a,b,pa,pb,played,w,wName:w?(w==="A"?T().nom:(m.adv.nom||"Équipe B")):"",hi:Math.max(a,b),lo:Math.min(a,b)};
+}
+function recevante(){return M().dom?T().nom:(M().adv.nom||"");}
+function subject(){return `${code()} - ${T().nom} / ${M().adv.nom||"Équipe B"}`;}
+
+/* ---------- render: match ---------- */
+function renderHeader(){
+  $("#tF").setAttribute("aria-pressed",S.cur==="F");$("#tM").setAttribute("aria-pressed",S.cur==="M");
+  $("#hdTitle").textContent=S.tab==="vLic"?"Licences":S.tab==="vTeam"?"Équipes":"Feuille de match";
+  $("#hdSub").textContent=`${T().nom} · ${S.cur==="F"?"équipe féminine":"équipe masculine"}`;
+}
+function renderMatch(){
+  const m=M(),t=T();
+  $("#mDate").value=m.date;$("#mDom").value=m.dom?"1":"0";$("#mComp").value=m.comp;
+  $("#mPoule").value=m.poule;$("#mJour").value=m.jour;$("#codeOut").textContent=code();
+  $("#nomA").textContent=t.nom;$("#advNom").value=m.adv.nom;$("#mObs").value=m.obs;$("#mRayer").checked=m.rayer;$("#mArb").value=m.arb;
+  renderOur();renderAdv();
+  renderSets();renderSigs();
+}
+function renderOur(){
+  const m=M(),t=T(),pres=t.players.filter(p=>m.present[p.id]),abs=t.players.filter(p=>!m.present[p.id]);
+  const row=(p,on)=>`<div class="prow ${on?"":"off"}">
+      <div><div class="nm">${esc(p.nom)}</div><div class="lc">${esc(p.lic)}</div></div>
+      ${on?`<button class="vu" data-vua="${p.id}" aria-pressed="${!!m.vuA[p.id]}">VU</button>`:"<span></span>"}
+      <button class="eye" data-lic="${p.id}" aria-label="Voir la licence de ${esc(p.nom)}">${EYE}</button>
+      ${on?`<button class="absent" data-abs="${p.id}">Absent</button>`:`<button class="back" data-back="${p.id}">Présent</button>`}</div>`;
+  $("#ourList").innerHTML=pres.map(p=>row(p,true)).join("")+(abs.length?`<div class="abs-h">Absents · pas sur la feuille</div>`+abs.map(p=>row(p,false)).join(""):"");
+  $("#ourCount").textContent=`${pres.length} présent${pres.length>1?"s":""}`;
+}
+function renderAdv(){
+  $("#advList").innerHTML=M().adv.players.map((p,i)=>`<div class="advrow"><span class="n">${i+1}</span>
+      <input id="an_${i}" data-an="${i}" value="${esc(p.nom)}" placeholder="NOM Prénom" aria-label="Joueur ${i+1}">
+      <input id="al_${i}" data-al="${i}" value="${esc(p.lic)}" inputmode="numeric" placeholder="N° licence" aria-label="Licence ${i+1}">
+      <button class="vu" data-vub="${i}" aria-pressed="${!!p.vu}">VU</button>
+      <button class="eye ${p.img?"on":""}" data-advlic="${i}" aria-label="Voir la licence scannée">${EYE}</button>
+      ${p.note?`<div class="advnote">${esc(p.note)}</div>`:""}</div>`).join("");
+}
+function renderSets(){
+  const m=M(),sc=score();
+  $("#sets").innerHTML=`<div class="setrow"><span></span><span class="sethead">${esc(T().nom)}</span><span class="sethead">${esc(m.adv.nom||"Équipe B")}</span></div>`+
+    m.sets.map(([x,y],i)=>`<div class="setrow"><span class="lab">Set ${i+1}</span>
+      <input type="number" inputmode="numeric" min="0" id="sa_${i}" data-set="${i}" data-side="0" value="${esc(x)}" class="${sc.played[i]==="A"?"win":""}" aria-label="Set ${i+1} équipe A">
+      <input type="number" inputmode="numeric" min="0" id="sb_${i}" data-set="${i}" data-side="1" value="${esc(y)}" class="${sc.played[i]==="B"?"win":""}" aria-label="Set ${i+1} équipe B"></div>`).join("")+
+    `<div class="setrow"><span class="lab">Total</span><span class="sethead" style="font-size:18px;color:var(--ink)">${sc.pa}</span><span class="sethead" style="font-size:18px;color:var(--ink)">${sc.pb}</span></div>`;
+  $("#winOut").textContent=sc.w?`${sc.wName} · ${sc.hi}-${sc.lo}`:"—";
+}
+function updateSetMarks(){
+  const sc=score();
+  M().sets.forEach((_,i)=>{$("#sa_"+i).className=sc.played[i]==="A"?"win":"";$("#sb_"+i).className=sc.played[i]==="B"?"win":"";});
+  const tots=document.querySelectorAll("#sets .setrow:last-child .sethead");tots[0].textContent=sc.pa;tots[1].textContent=sc.pb;
+  $("#winOut").textContent=sc.w?`${sc.wName} · ${sc.hi}-${sc.lo}`:"—";
+}
+function renderSigs(){
+  document.querySelectorAll("[data-sig]").forEach(b=>{const v=M()[b.dataset.sig];b.classList.toggle("done",!!v);
+    b.lastElementChild.outerHTML=v?`<img src="${v}" alt="Signature">`:`<em>Toucher pour signer</em>`;});
+}
+
+/* ---------- render: licences & team ---------- */
+function renderLic(){
+  $("#licTitle").textContent=`Licences · ${T().nom}`;
+  $("#licGrid").innerHTML=T().players.map(p=>`<button class="lcard" data-lic="${p.id}">
+    ${IMGS[p.id]?`<img src="${IMGS[p.id]}" alt="Licence de ${esc(p.nom)}" loading="lazy">`:`<div class="ph">Pas de licence enregistrée pour ce joueur</div>`}
+    <b>${esc(p.nom)}</b><span>N° ${esc(p.lic)}${p.naiss?` · né·e le ${esc(p.naiss)}`:""}</span></button>`).join("");
+}
+function renderTeam(){
+  const t=T();$("#teamTitle").textContent=S.cur==="F"?"Profil · équipe féminine":"Profil · équipe masculine";
+  $("#tNom").value=t.nom;$("#tComp").value=t.comp;
+  $("#edList").innerHTML=t.players.map((p,i)=>`<div class="edrow">
+    <input id="en_${p.id}" data-en="${i}" value="${esc(p.nom)}" aria-label="Nom">
+    <input id="el_${p.id}" data-el="${i}" value="${esc(p.lic)}" inputmode="numeric" aria-label="N° licence">
+    <button class="del" data-del="${i}" aria-label="Retirer ${esc(p.nom)}">×</button></div>`).join("");
+}
+function renderAll(){
+  renderHeader();
+  ["vMatch","vLic","vTeam"].forEach(v=>$("#"+v).hidden=v!==S.tab);
+  document.querySelectorAll(".tabs button").forEach(b=>b.toggleAttribute("aria-current",b.dataset.tab===S.tab)||0);
+  document.querySelectorAll(".tabs button").forEach(b=>{if(b.dataset.tab===S.tab)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current");});
+  if(S.tab==="vMatch")renderMatch();if(S.tab==="vLic")renderLic();if(S.tab==="vTeam")renderTeam();
+}
+
+/* ---------- licence modal ---------- */
+function openAdvLic(i){
+  const p=M().adv.players[i];if(!p||!p.img)return;
+  $("#mlName").textContent=p.nom||"Licence scannée";const im=$("#mlImg");im.src=p.img;im.hidden=false;im.alt="Licence de "+(p.nom||"");
+  $("#mlKv").innerHTML=`<dt>N° licence</dt><dd>${esc(p.lic)}</dd>`+(p.naiss?`<dt>Naissance</dt><dd>${esc(p.naiss)}</dd>`:"")+(p.club?`<dt>Club</dt><dd>${esc(p.club)}</dd>`:"")+(p.note?`<dt>À vérifier</dt><dd>${esc(p.note)}</dd>`:"");
+  $("#mdLic").hidden=false;
+}
+function openLic(id){
+  const p=T().players.find(x=>x.id===id);if(!p)return;
+  $("#mlName").textContent=p.nom;
+  const im=$("#mlImg");if(IMGS[id]){im.src=IMGS[id];im.hidden=false;im.alt="Licence de "+p.nom;}else im.hidden=true;
+  $("#mlKv").innerHTML=`<dt>N° licence</dt><dd>${esc(p.lic)}</dd>`+(p.naiss?`<dt>Naissance</dt><dd>${esc(p.naiss)}</dd>`:"")+(p.valid?`<dt>Assurance</dt><dd>Validée le ${esc(p.valid)}</dd>`:"")+`<dt>Validité</dt><dd>31/08/2027</dd>`;
+  $("#mdLic").hidden=false;
+}
+
+/* ---------- signature pad ---------- */
+let padKey=null,padDirty=false;
+const pad=$("#pad"),pctx=pad.getContext("2d");
+function openPad(key,label){
+  padKey=key;$("#msTitle").textContent="Signature · "+label;$("#mdSig").hidden=false;
+  const r=pad.getBoundingClientRect(),d=window.devicePixelRatio||1;
+  pad.width=r.width*d;pad.height=r.height*d;pctx.setTransform(d,0,0,d,0,0);
+  pctx.lineWidth=2.4;pctx.lineCap="round";pctx.lineJoin="round";pctx.strokeStyle="#0b1a5c";padDirty=false;
+}
+let drawing=false,last=null;
+pad.addEventListener("pointerdown",e=>{drawing=true;pad.setPointerCapture(e.pointerId);const r=pad.getBoundingClientRect();last=[e.clientX-r.left,e.clientY-r.top];});
+pad.addEventListener("pointermove",e=>{if(!drawing)return;const r=pad.getBoundingClientRect(),p=[e.clientX-r.left,e.clientY-r.top];
+  pctx.beginPath();pctx.moveTo(...last);pctx.lineTo(...p);pctx.stroke();last=p;padDirty=true;});
+["pointerup","pointercancel","pointerleave"].forEach(ev=>pad.addEventListener(ev,()=>drawing=false));
+$("#padClear").onclick=()=>{pctx.clearRect(0,0,pad.width,pad.height);padDirty=false;};
+$("#padOk").onclick=()=>{
+  if(!padDirty){M()[padKey]=null;}else{
+    const d=pctx.getImageData(0,0,pad.width,pad.height).data;let x0=pad.width,y0=pad.height,x1=0,y1=0;
+    for(let y=0;y<pad.height;y+=2)for(let x=0;x<pad.width;x+=2){if(d[(y*pad.width+x)*4+3]>0){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;}}
+    const pd=8,w=Math.min(pad.width,x1-x0+pd*2),h=Math.min(pad.height,y1-y0+pd*2),c=document.createElement("canvas");
+    c.width=w;c.height=h;c.getContext("2d").drawImage(pad,Math.max(0,x0-pd),Math.max(0,y0-pd),w,h,0,0,w,h);
+    M()[padKey]=c.toDataURL("image/png");
+  }
+  $("#mdSig").hidden=true;renderSigs();save();
+};
+
+/* ---------- sheet drawing (reproduit la FDM FSGT 78) ---------- */
+const logoImg=new Image();logoImg.src=LOGO;
+const loadImg=src=>new Promise(r=>{if(!src)return r(null);const i=new Image();i.onload=()=>r(i);i.onerror=()=>r(null);i.src=src;});
+async function drawSheet(){
+  const K=2.2,W=1052,H=744,cv=$("#sheet");cv.width=W*K;cv.height=H*K;
+  const c=cv.getContext("2d");c.setTransform(K,0,0,K,0,0);
+  const m=M(),t=T(),sc=score(),FONT="Arial, Helvetica, sans-serif",GREY="#808080",LGREY="#bfbfbf";
+  c.fillStyle="#fff";c.fillRect(0,0,W,H);
+  const box=(x,y,w,h,fill,lw=1)=>{if(fill){c.fillStyle=fill;c.fillRect(x,y,w,h);}c.lineWidth=lw;c.strokeStyle="#000";c.strokeRect(x,y,w,h);};
+  const txt=(s,x,y,o={})=>{s=String(s??"");if(!s)return;let size=o.size||12;c.fillStyle=o.color||"#000";c.textAlign=o.align||"center";c.textBaseline="middle";
+    const f=()=>`${o.italic?"italic ":""}${o.bold?"bold ":""}${size}px ${FONT}`;c.font=f();
+    if(o.max)while(c.measureText(s).width>o.max&&size>6){size-=.5;c.font=f();}c.fillText(s,x,y);};
+  const strike=(x,y,w,h)=>{c.save();c.strokeStyle="#000";c.lineWidth=1;c.beginPath();c.moveTo(x+4,y+h-3);c.lineTo(x+w-4,y+3);c.stroke();c.restore();};
+  const fitImg=(img,x,y,w,h)=>{if(!img)return;const r=Math.min(w/img.width,h/img.height);const iw=img.width*r,ih=img.height*r;c.drawImage(img,x+(w-iw)/2,y+(h-ih)/2,iw,ih);};
+
+  // logo + en-tête
+  if(logoImg.complete&&logoImg.naturalWidth)c.drawImage(logoImg,58,44,98,96*98/100);
+  box(158,38,834,76,"#d9d9d9",2.5);
+  txt("DATE DE LA RENCONTRE",358,62,{bold:true,size:12.5});
+  txt("EQUIPE RECEVANTE",658,62,{bold:true,size:12.5});
+  txt("CODE MATCH",896,62,{size:12.5});
+  box(247,73,222,33,"#fff",1.5);box(537,73,242,33,"#fff",1.5);box(813,73,167,33,"#fff",1.5);
+  const d=m.date?m.date.split("-").reverse().join("/"):"";
+  txt(d,358,90,{bold:true,size:14});txt(recevante(),658,90,{bold:true,size:13,max:230});txt(code(),896,90,{bold:true,size:13,max:158});
+  const info=['Le code match sous la forme "X-PouleY-JZ" ou:  X représente la compétition (M pour le championnat masculin, F pour le championnat féminin, L pour le',
+    'challenge loisir, CM pour la coupe masculins, CF pour la coupe féminines, Y représente la poule de championnat ou le match de coupe et Z représente la journée',
+    'de championnat.'];
+  info.forEach((l,i)=>txt(l,160,125+i*13,{bold:true,size:9.4,align:"left",max:830}));
+
+  // équipes
+  const team=(x,label,nom,rows,vuFn)=>{
+    box(x,168,455,269,null,2.5);
+    c.fillStyle="#000";c.fillRect(x,168,97,28);txt(label,x+8,182,{bold:true,size:15,color:"#fff",align:"left"});
+    box(x+97,168,358,28,"#fff",1);txt(nom,x+200,182,{bold:true,size:14,max:300});
+    c.fillStyle=GREY;c.fillRect(x,197,455,20);
+    txt("Noms des joueurs",x+138,207,{bold:true,size:12.5,color:"#fff"});txt("Vu",x+300,207,{bold:true,size:12.5,color:"#fff"});txt("N° licence",x+390,207,{bold:true,size:12.5,color:"#fff"});
+    for(let i=0;i<10;i++){const y=217+i*22,r=rows[i];
+      c.strokeStyle="#000";c.lineWidth=.8;c.strokeRect(x,y,276,22);c.strokeRect(x+276,y,48,22);c.strokeRect(x+324,y,131,22);
+      if(r&&r.nom){txt(r.nom,x+138,y+11,{size:11.5,max:262});txt(r.lic,x+390,y+11,{size:12,max:120});
+        if(vuFn(i)){c.save();c.strokeStyle="#0b1a5c";c.lineWidth=2;c.beginPath();c.moveTo(x+290,y+11);c.lineTo(x+297,y+17);c.lineTo(x+310,y+5);c.stroke();c.restore();}}
+      else if(m.rayer)strike(x,y,455,22);
+    }
+    box(x,168,455,269,null,2.5);
+  };
+  const pres=presentPlayers();
+  team(60,"EQUIPE A",t.nom,pres,i=>!!m.vuA[pres[i].id]);
+  const advRows=m.adv.players.filter(p=>p.nom.trim());
+  team(537,"EQUIPE B",m.adv.nom,advRows,i=>!!advRows[i].vu);
+
+  // scores
+  box(60,448,455,182,null,2.5);c.fillStyle="#000";c.fillRect(60,448,455,27);txt("SCORES",287,462,{bold:true,size:14,color:"#fff"});
+  c.fillStyle=GREY;c.fillRect(60,476,455,21);txt("SETS",108,486,{bold:true,size:12,color:"#fff"});txt("EQUIPE A",247,486,{bold:true,size:12,color:"#fff"});txt("EQUIPE B",426,486,{bold:true,size:12,color:"#fff"});
+  for(let i=0;i<5;i++){const y=497+i*21;c.lineWidth=.8;c.strokeStyle="#000";c.strokeRect(60,y,97,21);c.strokeRect(157,y,179,21);c.strokeRect(336,y,179,21);
+    txt(String(i+1),108,y+11,{bold:true,size:11});const [a,b]=m.sets[i];
+    if(a!==""||b!==""){txt(a,247,y+11,{bold:sc.played[i]==="A",size:13});txt(b,426,y+11,{bold:sc.played[i]==="B",size:13});}
+    else if(m.rayer){strike(157,y,179,21);strike(336,y,179,21);}}
+  c.fillStyle=GREY;c.fillRect(60,602,97,28);txt("Total Points",108,616,{size:12,color:"#fff"});
+  c.strokeRect(157,602,179,28);c.strokeRect(336,602,179,28);
+  txt(String(sc.pa),247,616,{bold:true,size:14});txt(String(sc.pb),426,616,{bold:true,size:14});
+  box(60,448,455,182,null,2.5);
+
+  // observations
+  box(537,448,455,182,null,2.5);c.fillStyle="#000";c.fillRect(537,448,455,27);
+  txt("OBSERVATIONS - RECLAMATIONS (licences, référent loisir...)",764,462,{bold:true,size:12.5,color:"#fff",max:440});
+  if(m.obs.trim()){c.font=`12px ${FONT}`;c.fillStyle="#000";c.textAlign="left";const words=m.obs.replace(/\n/g," \n ").split(" ");let line="",y=492;
+    for(const w of words){if(w==="\n"){c.fillText(line,545,y);line="";y+=15;continue;}const test=line?line+" "+w:w;
+      if(c.measureText(test).width>438){c.fillText(line,545,y);line=w;y+=15;}else line=test;if(y>622)break;}
+    if(y<=622)c.fillText(line,545,y);}
+  else if(m.rayer)strike(537,476,455,154);
+
+  // vainqueur + arbitre
+  box(60,638,455,79,null,2.5);c.fillStyle=GREY;c.fillRect(60,638,455,22);
+  txt("EQUIPE VAINQUEUR",198,649,{bold:true,size:12,color:"#fff"});txt("NOM et SIGNATURE ARBITRE",426,649,{bold:true,size:10,color:"#fff",max:172});
+  c.lineWidth=.8;c.strokeRect(60,660,276,28);c.strokeRect(60,688,276,29);c.strokeRect(336,660,179,57);
+  txt(sc.wName,198,674,{bold:true,size:13,max:260});
+  txt("Par",108,703,{bold:true,size:12});txt("sets à",228,703,{bold:true,size:12});
+  if(sc.w){txt(String(sc.hi),170,703,{bold:true,size:14});txt(String(sc.lo),290,703,{bold:true,size:14});}
+  txt(m.arb,426,670,{size:11,max:170});
+  const [iArb,iA,iB]=await Promise.all([loadImg(m.sigArb),loadImg(m.sigA),loadImg(m.sigB)]);
+  fitImg(iArb,342,678,167,37);
+  box(60,638,455,79,null,2.5);
+
+  // signatures capitaines
+  box(537,638,455,79,null,2.5);c.fillStyle="#000";c.fillRect(537,638,455,22);txt("SIGNATURES CAPITAINES",764,649,{bold:true,size:12.5,color:"#fff"});
+  txt("Capitaine A",645,668,{bold:true,size:11});txt("Capitaine B",845,668,{bold:true,size:11});
+  fitImg(iA,560,676,170,39);fitImg(iB,770,676,170,39);
+
+  txt("Feuille de match à envoyer dans les 72 heures à fsgt78.volley@gmail.com avec, en objet du mail, le code match et le nom des équipes présentes.",526,731,{size:9.5,max:930});
+  return cv;
+}
+
+/* ---------- checks ---------- */
+function checks(){
+  const m=M(),w=[],sc=score();
+  if(!m.date)w.push("Date de la rencontre manquante");
+  if(!m.poule||!m.jour)w.push("Code match incomplet (poule ou journée)");
+  if(!m.adv.nom.trim())w.push("Nom de l'équipe B manquant");
+  if(presentPlayers().length<6)w.push(`Équipe A : ${presentPlayers().length} présent·e·s seulement`);
+  if(!m.adv.players.some(p=>p.nom.trim()))w.push("Aucun joueur saisi pour l'équipe B");
+  if(!sc.w)w.push("Pas de vainqueur : scores incomplets");
+  if(!m.arb.trim())w.push("Nom de l'arbitre manquant");
+  if(!m.sigArb)w.push("Signature de l'arbitre manquante");
+  if(!m.sigA)w.push("Signature du capitaine A manquante");
+  if(!m.sigB)w.push("Signature du capitaine B manquante");
+  return w;
+}
+
+/* ---------- export ---------- */
+let lastJpg=null;
+const fileBase=()=>("FDM_"+code()+"_"+T().nom+"_"+(M().adv.nom||"B")).replace(/[^\w\-]+/g,"_");
+async function generate(){
+  const w=checks(),ul=$("#warns");ul.hidden=!w.length;ul.innerHTML=w.map(x=>`<li>${esc(x)}</li>`).join("");
+  const cv=await drawSheet();lastJpg=cv.toDataURL("image/jpeg",.86);
+  $("#prevImg").src=lastJpg;$("#outZone").hidden=false;$("#mailSub").textContent=subject();
+  $("#mailMsg").innerHTML="";
+  const body=`Bonjour,\n\nVeuillez trouver ci-jointe la feuille de match ${code()} : ${T().nom} / ${M().adv.nom||"Équipe B"}.\n\nSportivement,`;
+  $("#mailtoLink").href=`mailto:${MAIL_TO}?subject=${encodeURIComponent(subject())}&body=${encodeURIComponent(body)}`;
+  return body;
+}
+function jpgBlob(){const b=atob(lastJpg.split(",")[1]),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return new Blob([u],{type:"image/jpeg"});}
+function pdfBlob(){const {jsPDF}=window.jspdf;const doc=new jsPDF({orientation:"landscape",unit:"mm",format:"a4"});doc.addImage(lastJpg,"JPEG",0,0,297,210);return doc.output("blob");}
+const b64=blob=>new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result.split(",")[1]);fr.readAsDataURL(blob);});
+
+function makeFile(kind){
+  const pdf=kind==="pdf"&&window.jspdf;const blob=pdf?pdfBlob():jpgBlob();const ext=pdf?"pdf":"jpg";
+  return new File([blob],fileBase()+"."+ext,{type:pdf?"application/pdf":"image/jpeg"});
+}
+const APP=!!window.AndroidBridge;
+async function viaBridge(kind,share){
+  const f=makeFile(kind),b=await b64(f);
+  if(share){const body=`Bonjour,\n\nVeuillez trouver ci-jointe la feuille de match ${code()} : ${T().nom} / ${M().adv.nom||"Équipe B"}.\n\nSportivement,`;
+    return AndroidBridge.shareFile(f.name,f.type,b,MAIL_TO,subject(),body);}
+  return AndroidBridge.saveFile(f.name,f.type,b);
+}
+async function saveFile(kind){
+  if(!lastJpg)await generate();
+  if(APP){const r=await viaBridge(kind,false);toast(r==="error"?"Enregistrement impossible":"Enregistré dans "+r);return;}
+  const f=makeFile(kind),url=URL.createObjectURL(f),a=document.createElement("a");
+  a.href=url;a.download=f.name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),20000);
+  toast("Fichier enregistré : "+f.name);
+}
+async function shareMail(){
+  const body=await generate();const box=$("#mailMsg");box.innerHTML="";
+  if(APP){const r=await viaBridge($("#attFmt").value,true);
+    box.innerHTML=r==="error"?`<div class="errbox">Impossible de préparer le mail. Enregistre le PDF et joins-le à la main.</div>`:`<div class="okbox">Choisis Gmail : destinataire, objet et pièce jointe sont déjà remplis.</div>`;return;}
+  const f=makeFile($("#attFmt").value);
+  const data={files:[f],title:subject(),text:`À : ${MAIL_TO}\nObjet : ${subject()}\n\n${body}`};
+  if(navigator.canShare&&navigator.canShare({files:[f]})){
+    try{await navigator.share(data);box.innerHTML=`<div class="okbox">Mail préparé. Vérifie qu'il part bien à ${MAIL_TO} avec le bon objet.</div>`;}
+    catch(e){if(e&&e.name==="AbortError")return;box.innerHTML=`<div class="errbox">Le partage n'a pas abouti. Enregistre le PDF puis utilise le lien ci-dessous.</div>`;}
+  }else{
+    await saveFile($("#attFmt").value);
+    box.innerHTML=`<div class="errbox">Ce navigateur ne sait pas joindre le fichier directement. Il vient d'être enregistré : ouvre ton appli mail avec le lien ci-dessous et joins-le.</div>`;
+  }
+}
+
+/* ---------- scan de licence adverse ---------- */
+const scanSt=(msg,err)=>{const e=$("#scanSt");e.textContent=msg;e.classList.toggle("err",!!err);};
+function shrink(src,max=900){return new Promise((res,rej)=>{const i=new Image();i.onload=()=>{const r=Math.min(1,max/Math.max(i.width,i.height));
+  const c=document.createElement("canvas");c.width=Math.round(i.width*r);c.height=Math.round(i.height*r);c.getContext("2d").drawImage(i,0,0,c.width,c.height);
+  c.toBlob(b=>res({blob:b,url:c.toDataURL("image/jpeg",.8)}),"image/jpeg",.85);};i.onerror=()=>rej(new Error("image"));i.src=src;});}
+const fileUrl=f=>new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(f);});
+function cleanLic(x){const d=String(x||"").replace(/\D/g,"");return d?d.padStart(7,"0"):"";}
+function checkLic(info){const n=[];
+  if(info.saison&&!/2026\s*-\s*2027/.test(info.saison))n.push("saison "+info.saison);
+  if(info.valide===false)n.push("assurance non validée");
+  if(!info.lic)n.push("numéro illisible");
+  return n.length?"À vérifier : "+n.join(", "):"";}
+function addAdv(info){
+  const m=M();if(info.lic&&m.adv.players.some(p=>p.lic===info.lic)){return "déjà dans la liste";}
+  let k=m.adv.players.findIndex(p=>!p.nom.trim()&&!p.lic.trim());if(k<0)return "liste pleine (10)";
+  m.adv.players[k]={nom:info.nom||"",lic:info.lic||"",vu:false,img:info.img||null,naiss:info.naiss||"",club:info.club||"",note:checkLic(info)};
+  if(!m.adv.nom.trim()&&info.club){/* suggestion : le club, à compléter avec le numéro d'équipe */m.adv.nom=info.club.toUpperCase();$("#advNom").value=m.adv.nom;}
+  return null;
+}
+async function readPdf(file){
+  if(!window.pdfjsLib)throw {code:"nopdf"};
+  pdfjsLib.GlobalWorkerOptions.workerSrc="vendor/pdf.worker.min.js";
+  const doc=await pdfjsLib.getDocument({data:await file.arrayBuffer(),isEvalSupported:false}).promise;const pg=await doc.getPage(1);
+  const tc=await pg.getTextContent();const lines=[];let cur="",lastY=null;
+  tc.items.forEach(it=>{const y=Math.round(it.transform[5]);if(lastY!==null&&Math.abs(y-lastY)>2){lines.push(cur.trim());cur="";}cur+=(cur&&!it.hasEOL?" ":"")+it.str;lastY=y;});lines.push(cur.trim());
+  const L=lines.filter(Boolean),all=L.join("\n");
+  const vp=pg.getViewport({scale:600/pg.getViewport({scale:1}).width});const c=document.createElement("canvas");c.width=vp.width;c.height=vp.height;
+  await pg.render({canvasContext:c.getContext("2d"),viewport:vp}).promise;
+  const nameL=L.find(l=>/^(M|Mme|Mlle)\s+[A-ZÀ-Ý'\-]{2,}/.test(l))||"";
+  const lic=(all.match(/(?:^|\n)\s*(\d{6,8})\s*(?:\n|$)/)||[])[1]||"";
+  return{nom:nameL.replace(/^(M|Mme|Mlle)\s+/,""),lic:cleanLic(lic),naiss:((all.match(/\d{2}\/\d{2}\/(19|20)\d{2}/g)||[]).find(d=>+d.slice(-4)<=new Date().getFullYear()-5)||""),
+    saison:(all.match(/20\d{2}\s*-\s*20\d{2}/)||[""])[0],valide:/Oui\s*-\s*Valid/.test(all)?true:(/Non/.test(all)?false:undefined),
+    club:(L[L.findIndex(l=>/Valid/.test(l))+1]||"").replace(/LICENCE.*/,"").trim(),img:c.toDataURL("image/jpeg",.8)};
+}
+function parseLicence(text){
+  const L=text.split(/\n+/).map(s=>s.replace(/\s+/g," ").trim()).filter(Boolean), all=L.join("\n");
+  let nom="";
+  const re=/\b(?:Mme|MME|Mlle|M)\.?\s+((?:[A-ZÀ-ÖØ-Þ][A-ZÀ-ÖØ-Þ'’\-]+\s+)+)([A-ZÀ-ÖØ-Þ][a-zà-öø-ÿ'’\-]+(?:[ \-][A-ZÀ-ÖØ-Þ][a-zà-öø-ÿ'’\-]+)*)/;
+  for(const l of L){const m=l.match(re);if(m){nom=(m[1].trim()+" "+m[2]).trim();break;}}
+  let lic=(all.match(/N\s*[°º"o0]?\s*[:.]?\s*(\d{6,8})\b/)||[])[1];
+  if(!lic){const c=(all.match(/(?<![\d\/])\d{7}(?![\d\/])/g)||[]);lic=c[0];}
+  const yr=new Date().getFullYear();
+  const dates=all.match(/\d{2}\/\d{2}\/(?:19|20)\d{2}/g)||[];
+  const naiss=dates.find(d=>+d.slice(-4)<=yr-5)||"";
+  const saison=(all.match(/20\d{2}\s*[-–]\s*20\d{2}/)||[""])[0].replace(/\s/g,"");
+  const valide=/Oui/i.test(all)?true:/\bNon\b/.test(all)?false:undefined;
+  let club="";const ci=L.findIndex(l=>/CLUB/i.test(l));if(ci>=0){club=L[ci].replace(/.*CLUB\s*:?\s*/i,"").trim()||L[ci+1]||"";}
+  club=club.replace(/LICENCE.*/i,"").trim();
+  return{nom,lic:lic?lic.padStart(7,"0"):"",naiss,saison,valide,club};
+}
+let ocrWorker=null;
+async function getOcr(){
+  if(ocrWorker)return ocrWorker;
+  if(!window.Tesseract)throw {code:"noocr"};
+  const base=new URL("vendor/tess/",location.href).href;
+  ocrWorker=await Tesseract.createWorker("fra",1,{workerPath:base+"worker.min.js",corePath:base,langPath:base.replace(/\/$/,""),
+    logger:m=>{if(m.status==="recognizing text")scanSt(`Lecture… ${Math.round(m.progress*100)} %`);else if(/load/.test(m.status))scanSt("Préparation du lecteur (1re fois)…");}});
+  return ocrWorker;
+}
+async function readPhoto(file){
+  const {blob,url}=await shrink(await fileUrl(file),2000);
+  const w=await getOcr();const {data}=await w.recognize(blob);
+  const info=parseLicence(data.text||"");
+  if(!info.nom&&!info.lic)throw {code:"unreadable"};
+  info.img=(await shrink(url,700)).url;return info;
+}
+async function handleScan(files){
+  const list=[...files];if(!list.length)return;$("#bScanCam").disabled=$("#bScanFile").disabled=true;
+  let ok=0,msgs=[];
+  for(const [n,f] of list.entries()){
+    scanSt(`Lecture de la licence${list.length>1?` ${n+1}/${list.length}`:""}…`);
+    try{
+      const isPdf=f.type==="application/pdf"||/\.pdf$/i.test(f.name);
+      const info=isPdf?await readPdf(f):await readPhoto(f);
+      const e=addAdv(info);if(e)msgs.push(`${info.nom||"?"} : ${e}`);else ok++;
+    }catch(e){const c=e&&e.code;
+      msgs.push(c==="noocr"?"lecteur de photo non chargé, recharge l'appli":
+        c==="nopdf"?"lecteur PDF non chargé, recharge l'appli":
+        c==="unreadable"?"licence illisible : reprends la photo de plus près, bien à plat, sans reflet":
+        "lecture impossible, réessaie ou saisis à la main");}
+  }
+  renderAdv();renderSets();save();
+  $("#bScanCam").disabled=$("#bScanFile").disabled=false;
+  scanSt((ok?`${ok} joueur${ok>1?"s":""} ajouté${ok>1?"s":""}. Vérifie le nom et le numéro, puis coche « Vu » une fois la photo contrôlée. `:"")+(msgs.length?msgs.join(" · "):""),!ok&&msgs.length);
+}
+$("#bScanCam").onclick=()=>$("#fCam").click();
+$("#bScanFile").onclick=()=>$("#fFile").click();
+["#fCam","#fFile"].forEach(id=>$(id).addEventListener("change",e=>{handleScan(e.target.files);e.target.value="";}));
+
+/* ---------- events ---------- */
+$("#tF").onclick=()=>{S.cur="F";lastJpg=null;$("#outZone").hidden=true;$("#warns").hidden=true;renderAll();save();};
+$("#tM").onclick=()=>{S.cur="M";lastJpg=null;$("#outZone").hidden=true;$("#warns").hidden=true;renderAll();save();};
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{S.tab=b.dataset.tab;renderAll();save();window.scrollTo(0,0);});
+const bind=(sel,fn)=>$(sel).addEventListener("input",e=>{fn(e.target.value);save();});
+bind("#mDate",v=>M().date=v);
+$("#mDom").onchange=e=>{M().dom=e.target.value==="1";save();};
+$("#mComp").onchange=e=>{M().comp=e.target.value;$("#codeOut").textContent=code();save();};
+bind("#mPoule",v=>{M().poule=v.trim();$("#codeOut").textContent=code();});
+bind("#mJour",v=>{M().jour=v.trim();$("#codeOut").textContent=code();});
+bind("#advNom",v=>{M().adv.nom=v;const h=document.querySelectorAll("#sets .sethead");if(h[1])h[1].textContent=v||"Équipe B";updateSetMarks();});
+bind("#mObs",v=>M().obs=v);
+bind("#mArb",v=>M().arb=v);
+$("#mRayer").onchange=e=>{M().rayer=e.target.checked;save();};
+document.addEventListener("click",e=>{
+  const t=e.target.closest("button");if(!t)return;
+  if(t.dataset.lic){openLic(t.dataset.lic);return;}
+  if(t.dataset.advlic!==undefined){openAdvLic(+t.dataset.advlic);return;}
+  if(t.dataset.abs){M().present[t.dataset.abs]=false;renderOur();save();return;}
+  if(t.dataset.back){const m=M();if(T().players.filter(p=>m.present[p.id]).length>=10){toast("Déjà 10 présents : passe quelqu'un en absent d'abord");return;}m.present[t.dataset.back]=true;renderOur();save();return;}
+  if(t.dataset.vua){const m=M();m.vuA[t.dataset.vua]=!m.vuA[t.dataset.vua];t.setAttribute("aria-pressed",!!m.vuA[t.dataset.vua]);save();return;}
+  if(t.dataset.vub){const p=M().adv.players[+t.dataset.vub];p.vu=!p.vu;t.setAttribute("aria-pressed",p.vu);save();return;}
+  if(t.dataset.sig){openPad(t.dataset.sig,t.firstElementChild.textContent);return;}
+  if(t.dataset.close){$("#"+t.dataset.close).hidden=true;return;}
+  if(t.dataset.copy){const s=$("#"+t.dataset.copy).textContent;
+    navigator.clipboard?.writeText(s).then(()=>toast("Copié"),()=>{const r=document.createRange();r.selectNodeContents($("#"+t.dataset.copy));getSelection().removeAllRanges();getSelection().addRange(r);toast("Sélectionné, copie-le");});return;}
+  if(t.dataset.del!==undefined){const tm=T();const [p]=tm.players.splice(+t.dataset.del,1);delete M().present[p.id];renderTeam();save();return;}
+});
+document.addEventListener("change",e=>{const t=e.target;
+});
+document.addEventListener("input",e=>{const t=e.target;
+  if(t.dataset.an!==undefined){M().adv.players[+t.dataset.an].nom=t.value;save();}
+  else if(t.dataset.al!==undefined){M().adv.players[+t.dataset.al].lic=t.value;save();}
+  else if(t.dataset.set!==undefined){M().sets[+t.dataset.set][+t.dataset.side]=t.value;updateSetMarks();save();}
+  else if(t.dataset.en!==undefined){T().players[+t.dataset.en].nom=t.value;save();}
+  else if(t.dataset.el!==undefined){T().players[+t.dataset.el].lic=t.value;save();}
+  else if(t.id==="tNom"){T().nom=t.value;renderHeader();save();}
+});
+$("#tComp").onchange=e=>{T().comp=e.target.value;save();};
+$("#bAddP").onclick=()=>{const id="p"+Date.now();T().players.push({id,nom:"NOM Prénom",lic:""});M().present[id]=true;renderTeam();save();
+  const el=$("#en_"+id);el&&(el.focus(),el.select());};
+$("#bRestore").onclick=()=>{const d=defTeams()[S.cur];S.teams[S.cur]=d;M().present=Object.fromEntries(d.players.map(p=>[p.id,true]));renderAll();save();toast("Liste d'origine restaurée");};
+$("#bGen").onclick=()=>generate();
+$("#bPdf").onclick=()=>saveFile("pdf");
+$("#bJpg").onclick=()=>saveFile("jpg");
+$("#bMail").onclick=()=>shareMail();
+$("#bReset").onclick=()=>{$("#resetConfirm").hidden=false;};
+$("#bResetNo").onclick=()=>{$("#resetConfirm").hidden=true;};
+$("#bResetYes").onclick=()=>{S.match[S.cur]=defMatch(T());lastJpg=null;$("#outZone").hidden=true;$("#warns").hidden=true;$("#resetConfirm").hidden=true;renderAll();save();window.scrollTo(0,0);toast("Nouvelle feuille prête");};
+document.querySelectorAll(".modal").forEach(md=>md.addEventListener("click",e=>{if(e.target===md)md.hidden=true;}));
+
+$("#logo").src=LOGO;
+renderAll();
+window.fdmBack=()=>{const open=[...document.querySelectorAll(".modal")].find(m=>!m.hidden);if(open){open.hidden=true;return true;}if(S.tab!=="vMatch"){S.tab="vMatch";renderAll();return true;}return false;};
+if(window.AndroidBridge){$("#mailtoLink").hidden=true;}
+if(!window.AndroidBridge&&"serviceWorker" in navigator&&location.protocol!=="file:")navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script>
+</body>
+</html>

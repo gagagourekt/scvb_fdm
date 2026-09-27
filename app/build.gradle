@@ -1,0 +1,41 @@
+plugins { id "com.android.application" }
+
+android {
+    namespace "fr.saintcyrvolley.fdm"
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "fr.saintcyrvolley.fdm"
+        minSdk 24
+        targetSdk 34
+        versionCode Integer.parseInt(System.getenv("GITHUB_RUN_NUMBER") ?: "1")
+        versionName "1." + (System.getenv("GITHUB_RUN_NUMBER") ?: "0")
+    }
+    signingConfigs {
+        release {
+            storeFile file("fdm-release.keystore")
+            storePassword "fdmvolley2026"
+            keyAlias "fdm"
+            keyPassword "fdmvolley2026"
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    androidResources {
+        // garder le .gz de Tesseract tel quel
+        noCompress += ["gz", "wasm", "woff2", "jpg", "png"]
+    }
+}
+
+dependencies {
+    implementation "androidx.webkit:webkit:1.11.0"
+    implementation "androidx.core:core:1.13.1"
+}
