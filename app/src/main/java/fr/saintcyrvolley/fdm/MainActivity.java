@@ -5,6 +5,11 @@ import android.content.ActivityNotFoundException;
 import android.content.ClipData;
 import android.content.ContentValues;
 import android.content.Intent;
+import android.content.res.Configuration;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Color;
+import android.view.View;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -24,10 +29,19 @@ import android.widget.Toast;
 import androidx.core.content.FileProvider;
 import androidx.webkit.WebViewAssetLoader;
 
+import com.google.mlkit.vision.common.InputImage;
+import com.google.mlkit.vision.text.Text;
+import com.google.mlkit.vision.text.TextRecognition;
+import com.google.mlkit.vision.text.TextRecognizer;
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions;
+
+import org.json.JSONObject;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -45,6 +59,7 @@ public class MainActivity extends Activity {
     private ValueCallback<Uri[]> fileCallback;
     private Uri cameraUri;
     private File cameraFile;
+    private TextRecognizer recognizer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -182,6 +197,39 @@ public class MainActivity extends Activity {
 
     private class Bridge {
         @JavascriptInterface
+        public boolean hasNativeOcr() {
+            return true;
+        }
+
+        /** Lecture de texte ML Kit (sur l'appareil, hors ligne). Réponse via window.__ocrDone(id, {text|error}). */
+        @JavascriptInterface
+        public void ocr(final String id, String b64, int rotation) {
+            try {
+                byte[] bytes = Base64.decode(b64, Base64.DEFAULT);
+                Bitmap bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+                if (bmp == null) { sendOcr(id, null, "image"); return; }
+                InputImage img = InputImage.fromBitmap(bmp, rotation);
+                if (recognizer == null) recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
+                recognizer.process(img)
+                        .addOnSuccessListener(t -> sendOcr(id, linesInReadingOrder(t), null))
+                        .addOnFailureListener(e -> sendOcr(id, null, String.valueOf(e.getMessage())));
+            } catch (Throwable e) {
+                sendOcr(id, null, String.valueOf(e.getMessage()));
+            }
+        }
+
+        @JavascriptInterface
+        public boolean isDarkMode() {
+            return (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK)
+                    == Configuration.UI_MODE_NIGHT_YES;
+        }
+
+        @JavascriptInterface
+        public void setBars(final boolean dark) {
+            runOnUiThread(() -> applyBars(dark));
+        }
+
+        @JavascriptInterface
         public String saveFile(String name, String mime, String b64) {
             try {
                 byte[] bytes = Base64.decode(b64, Base64.DEFAULT);
@@ -234,6 +282,78 @@ public class MainActivity extends Activity {
                 return "error";
             }
         }
+    }
+
+    /** Remet les lignes lues dans l'ordre de lecture (haut → bas, gauche → droite). */
+    private static String linesInReadingOrder(Text t) {
+        List<Text.Line> lines = new ArrayList<>();
+        for (Text.TextBlock b : t.getTextBlocks()) lines.addAll(b.getLines());
+        List<float[]> boxes = new ArrayList<>();
+        List<String> texts = new ArrayList<>();
+        for (Text.Line l : lines) {
+            android.graphics.Rect r = l.getBoundingBox();
+            if (r == null) { boxes.add(new float[]{0, 0, 1}); }
+            else boxes.add(new float[]{r.centerY(), r.left, Math.max(1, r.height())});
+            texts.add(l.getText());
+        }
+        Integer[] idx = new Integer[lines.size()];
+        for (int i = 0; i < idx.length; i++) idx[i] = i;
+        java.util.Arrays.sort(idx, (a, b) -> Float.compare(boxes.get(a)[0], boxes.get(b)[0]));
+        StringBuilder out = new StringBuilder();
+        List<Integer> row = new ArrayList<>();
+        float rowY = -1e9f, rowH = 1;
+        for (int i : idx) {
+            float[] bx = boxes.get(i);
+            if (!row.isEmpty() && Math.abs(bx[0] - rowY) > Math.min(bx[2], rowH) * 0.6f) {
+                flushRow(row, boxes, texts, out);
+                row.clear();
+            }
+            if (row.isEmpty()) { rowY = bx[0]; rowH = bx[2]; }
+            row.add(i);
+        }
+        flushRow(row, boxes, texts, out);
+        return out.toString();
+    }
+
+    private static void flushRow(List<Integer> row, List<float[]> boxes, List<String> texts, StringBuilder out) {
+        if (row.isEmpty()) return;
+        Collections.sort(row, (a, b) -> Float.compare(boxes.get(a)[1], boxes.get(b)[1]));
+        for (int k = 0; k < row.size(); k++) {
+            if (k > 0) out.append(' ');
+            out.append(texts.get(row.get(k)));
+        }
+        out.append('\n');
+    }
+
+    private void sendOcr(String id, String text, String error) {
+        try {
+            JSONObject o = new JSONObject();
+            if (text != null) o.put("text", text); else o.put("error", error == null ? "ocr" : error);
+            final String js = "window.__ocrDone(" + JSONObject.quote(id) + "," + o.toString() + ")";
+            runOnUiThread(() -> web.evaluateJavascript(js, null));
+        } catch (Exception ignored) { }
+    }
+
+    private void applyBars(boolean dark) {
+        int bar = dark ? Color.parseColor("#0D1122") : Color.parseColor("#1E2B7A");
+        int nav = dark ? Color.parseColor("#161C34") : Color.WHITE;
+        getWindow().setStatusBarColor(bar);
+        getWindow().setNavigationBarColor(nav);
+        web.setBackgroundColor(dark ? Color.parseColor("#0D1122") : Color.parseColor("#EEF1F8"));
+        View d = getWindow().getDecorView();
+        int f = d.getSystemUiVisibility() & ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+        if (Build.VERSION.SDK_INT >= 26) {
+            if (dark) f &= ~View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+            else f |= View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+        }
+        d.setSystemUiVisibility(f);
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        // thème « Auto » : prévenir la page quand le téléphone passe en clair/sombre
+        if (web != null) web.evaluateJavascript("window.applyTheme && applyTheme()", null);
     }
 
     private void toast(String msg) {
