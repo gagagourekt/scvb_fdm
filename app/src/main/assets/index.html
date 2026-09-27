@@ -691,7 +691,7 @@ async function getOcr(){
   if(ocrWorker)return ocrWorker;
   if(!window.Tesseract)throw {code:"noocr"};
   const base=new URL("vendor/tess/",location.href).href;
-  ocrWorker=await Tesseract.createWorker("fra",1,{workerPath:base+"worker.min.js",corePath:base,langPath:base.replace(/\/$/,""),
+  ocrWorker=await Tesseract.createWorker("fra",1,{gzip:!window.AndroidBridge,workerPath:base+"worker.min.js",corePath:base,langPath:base.replace(/\/$/,""),
     logger:m=>{if(m.status==="recognizing text")scanSt(`Lecture… ${Math.round(m.progress*100)} %`);else if(/load/.test(m.status))scanSt("Préparation du lecteur (1re fois)…");}});
   return ocrWorker;
 }
